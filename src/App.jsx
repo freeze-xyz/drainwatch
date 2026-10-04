@@ -350,7 +350,7 @@ export default function App() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full">
-                    1 km Nearby Readiness Notice
+                    Community Readiness Notice — not an official flood warning.
                   </span>
                   <span className="text-xs text-indigo-200 font-medium">
                     {nearbyAlerts.length} nearby issue{nearbyAlerts.length === 1 ? '' : 's'}

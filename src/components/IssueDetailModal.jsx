@@ -19,6 +19,8 @@ import {
   Lock,
   Radio,
   Sparkles,
+  Bell,
+  BellRing,
 } from 'lucide-react';
 import {
   calculatePriorityScore,
@@ -34,9 +36,35 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
   const [confirming, setConfirming] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Follow updates state with browser localStorage persistence
+  const [followedReports, setFollowedReports] = useState(() => {
+    try {
+      const raw = localStorage.getItem('drainwatch_followed_reports');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const isFollowing = followedReports.includes(report.id);
+
+  const handleToggleFollow = () => {
+    try {
+      const next = isFollowing
+        ? followedReports.filter((id) => id !== report.id)
+        : [...followedReports, report.id];
+      setFollowedReports(next);
+      localStorage.setItem('drainwatch_followed_reports', JSON.stringify(next));
+    } catch (err) {
+      console.error('Failed to update followed reports in localStorage', err);
+    }
+  };
+
   const evaluation = calculatePriorityScore(report, weather.status);
   const evidenceMeta = evaluation.evidenceMeta;
   const photoFreshness = evaluation.photoFreshness;
+  const isConfirmed = (report.confirmations || 0) > 0 || report.evidenceState === 'community_confirmed';
+  const isResolved = report.status === 'resolved' || report.evidenceState === 'resolved';
 
   // Handle "Confirm current condition" (Second observer simulation)
   const handleConfirmCondition = () => {
@@ -99,6 +127,12 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
               {report.assetLabel && (
                 <span className="text-[10px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30 px-2 py-0.5 rounded-full">
                   {report.assetLabel}
+                </span>
+              )}
+              {isFollowing && (
+                <span className="text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <BellRing className="w-3 h-3 text-emerald-300" />
+                  <span>Following</span>
                 </span>
               )}
             </div>
@@ -337,112 +371,314 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
             </p>
           </div>
 
-          {/* Safety & Privacy Notice Container */}
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-300/80 space-y-2">
-            <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
-              <span>Safe Follow-Up Actions &amp; Privacy Rules</span>
-            </h4>
-            <ul className="text-xs text-amber-950 space-y-1 list-disc pl-4">
-              <li>
-                <strong>Photograph from a safe public location:</strong> Do not enter drains or floodwater.
-              </li>
-              <li>
-                <strong>Privacy protection:</strong> Avoid photographing identifiable people, private homes, vehicle plates, or sensitive locations where possible.
-              </li>
-              <li>
-                <strong>Review support only:</strong> Photo evidence supports review; it is not official verification.
-              </li>
-              <li>
-                <strong>Report dangerous issues:</strong> Residents should report urgent hazards directly to official municipal maintenance (such as Majlis Perbandaran Batu Pahat - MPBP); DrainWatch does not transmit data to any authority.
-              </li>
-            </ul>
-          </div>
+          {/* Community Action Section */}
+          <div className="space-y-4 pt-3 border-t border-slate-200">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-ocean" />
+                  <span>Community Action</span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Track issue progress, save updates, and confirm conditions safely.
+                </p>
+              </div>
 
-          {/* Interactive Community Actions */}
-          <div className="space-y-2 pt-2">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Take Community Action
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {/* Community Confirmation by Second Observer */}
+              {/* Follow updates button with localStorage persistence */}
               <button
-                onClick={handleConfirmCondition}
-                disabled={confirming}
-                className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-indigo-950 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-300 transition active:scale-95 text-center"
-                title="Confirm and endorse current condition as a secondary community observer"
+                type="button"
+                onClick={handleToggleFollow}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition active:scale-95 shadow-2xs ${
+                  isFollowing
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                }`}
+                title={isFollowing ? 'Click to stop following updates' : 'Follow updates for this issue'}
+                aria-pressed={isFollowing}
               >
-                <ThumbsUp className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>Confirm Current Condition</span>
+                {isFollowing ? (
+                  <>
+                    <BellRing className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Following updates</span>
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Follow updates</span>
+                  </>
+                )}
               </button>
-
-              {/* Marked as reported by user */}
-              <button
-                onClick={() =>
-                  handleStatusChange(
-                    'reported',
-                    'Marked as reported by the user (record logged locally; not transmitted to authorities).'
-                  )
-                }
-                disabled={updatingStatus || report.status === 'reported'}
-                className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl border border-amber-300 transition active:scale-95 text-center"
-              >
-                <Send className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>Marked as reported by user</span>
-              </button>
-
-              {/* Resolved / Reopen */}
-              {report.status !== 'resolved' ? (
-                <button
-                  onClick={() =>
-                    handleStatusChange('resolved', 'Issue marked resolved by community/maintenance team.')
-                  }
-                  disabled={updatingStatus}
-                  className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition active:scale-95 text-center"
-                >
-                  <CheckCircle className="w-4 h-4 text-white shrink-0" />
-                  <span>Mark Resolved</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() =>
-                    handleStatusChange('active', 'Issue reopened by community coordinator.')
-                  }
-                  disabled={updatingStatus}
-                  className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-xl transition text-center"
-                >
-                  <RefreshCw className="w-4 h-4 text-slate-600 shrink-0" />
-                  <span>Reopen Issue</span>
-                </button>
-              )}
             </div>
-          </div>
 
-          {/* Audit Trail / Timeline */}
-          {report.updates?.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-slate-200">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <History className="w-4 h-4 text-slate-500" />
-                <span>Evidence &amp; Update Timeline</span>
-              </h4>
-              <div className="space-y-2">
-                {report.updates.map((u) => (
-                  <div
-                    key={u.id}
-                    className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-start gap-2.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-ocean shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-slate-800 font-medium">{u.note}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {formatDateTime(u.timestamp)} • Action: {u.action}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            {/* Compact Safety Card */}
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-300/80 text-xs text-amber-950 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-bold text-amber-900 uppercase tracking-wider text-[11px] block">
+                  Safety Guidance
+                </span>
+                <p className="leading-relaxed text-amber-950 font-medium">
+                  Observe only from a safe public location. Do not enter drains, remove covers, walk or drive through floodwater, or approach moving water or unsafe roads. Follow official local emergency guidance.
+                </p>
               </div>
             </div>
-          )}
+
+            {/* Issue Status Timeline */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <History className="w-4 h-4 text-ocean" />
+                <span>Issue Status Timeline</span>
+              </h4>
+
+              <div className="relative pl-6 space-y-4 border-l-2 border-slate-200 ml-3 py-1">
+                {/* 1. Reported with photo evidence */}
+                <div className="relative">
+                  <span
+                    className={`absolute -left-[31px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white ${
+                      report.photoDataUrl ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                  >
+                    {report.photoDataUrl ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Camera className="w-3.5 h-3.5" />
+                    )}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">
+                        Reported with photo evidence
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          report.photoDataUrl
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                        }`}
+                      >
+                        {report.photoDataUrl ? 'Photo attached' : 'Needs photo evidence'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      {report.photoDataUrl
+                        ? 'Supported by a current community photo — verification may still be needed.'
+                        : 'Filed text-only — photo evidence required to verify and reach Critical priority.'}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                      {formatDateTime(report.reportedAt)} ({formatRelativeTime(report.reportedAt)})
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. Weather-aware readiness priority calculated */}
+                <div className="relative">
+                  <span className="absolute -left-[31px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white bg-emerald-500">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">
+                        Weather-aware readiness priority calculated
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${evaluation.badgeColor}`}
+                      >
+                        Priority {evaluation.level} (P={evaluation.score})
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Priority score evaluated against current forecast ({weather.precipitation24h} mm / 24h, {weather.status.toUpperCase()}) and issue severity.
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                      Dynamic rule calculation active
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Community-confirmed when applicable */}
+                <div className="relative">
+                  <span
+                    className={`absolute -left-[31px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white ${
+                      isConfirmed ? 'bg-emerald-500' : 'bg-slate-300'
+                    }`}
+                  >
+                    {isConfirmed ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Clock className="w-3.5 h-3.5 text-slate-600" />
+                    )}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">
+                        Community-confirmed when applicable
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          isConfirmed
+                            ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        {isConfirmed
+                          ? `${report.confirmations || 1} confirmation(s)`
+                          : 'Pending confirmation'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      {isConfirmed
+                        ? `Community-confirmed — independent confirmation recorded (${report.confirmations || 1} independent observer confirmation${(report.confirmations || 1) === 1 ? '' : 's'}).`
+                        : 'Awaiting independent confirmation from secondary community observers.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4. Resolved when applicable */}
+                <div className="relative">
+                  <span
+                    className={`absolute -left-[31px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white ${
+                      isResolved ? 'bg-emerald-500' : 'bg-sky-500'
+                    }`}
+                  >
+                    {isResolved ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Radio className="w-3.5 h-3.5" />
+                    )}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">
+                        Resolved when applicable
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          isResolved
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-sky-50 text-sky-800 border-sky-200'
+                        }`}
+                      >
+                        {isResolved ? 'Resolved' : 'Active / Monitoring'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      {isResolved
+                        ? 'Issue marked resolved by community/maintenance. Drainage capacity restored.'
+                        : 'Active issue in local readiness monitoring; open for community observation.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons: Confirm condition, Marked as reported, Resolve/Reopen */}
+            <div className="space-y-2 pt-1">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Community Actions
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Community Confirmation by Second Observer */}
+                <button
+                  type="button"
+                  onClick={handleConfirmCondition}
+                  disabled={confirming}
+                  className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-indigo-950 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-300 transition active:scale-95 text-center"
+                  title="Confirm and endorse current condition as a secondary community observer"
+                >
+                  <ThumbsUp className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>Confirm Current Condition</span>
+                </button>
+
+                {/* Marked as reported by user */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleStatusChange(
+                      'reported',
+                      'Marked as reported by the user (record logged locally; not transmitted to authorities).'
+                    )
+                  }
+                  disabled={updatingStatus || report.status === 'reported'}
+                  className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl border border-amber-300 transition active:scale-95 text-center"
+                >
+                  <Send className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>Marked as reported by user</span>
+                </button>
+
+                {/* Resolved / Reopen */}
+                {report.status !== 'resolved' ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleStatusChange('resolved', 'Issue marked resolved by community/maintenance team.')
+                    }
+                    disabled={updatingStatus}
+                    className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition active:scale-95 text-center"
+                  >
+                    <CheckCircle className="w-4 h-4 text-white shrink-0" />
+                    <span>Mark Resolved</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleStatusChange('active', 'Issue reopened by community coordinator.')
+                    }
+                    disabled={updatingStatus}
+                    className="flex items-center justify-center gap-2 p-3 text-xs font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-xl transition text-center"
+                  >
+                    <RefreshCw className="w-4 h-4 text-slate-600 shrink-0" />
+                    <span>Reopen Issue</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Privacy & Safe Follow-Up Rules */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5">
+              <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Privacy &amp; Follow-Up Rules</span>
+              </h4>
+              <ul className="space-y-1 list-disc pl-4 text-[11px] text-slate-600">
+                <li>
+                  <strong>Privacy protection:</strong> Avoid photographing identifiable people, private homes, vehicle plates, or sensitive locations where possible.
+                </li>
+                <li>
+                  <strong>Review support only:</strong> Photo evidence supports review; it is not official verification.
+                </li>
+                <li>
+                  <strong>Report dangerous issues:</strong> Residents should report urgent hazards directly to official municipal maintenance (such as Majlis Perbandaran Batu Pahat - MPBP); DrainWatch does not transmit data to any authority.
+                </li>
+              </ul>
+            </div>
+
+            {/* Audit Trail / Timeline */}
+            {report.updates?.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-slate-200">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-slate-500" />
+                  <span>Evidence &amp; Update History</span>
+                </h4>
+                <div className="space-y-2">
+                  {report.updates.map((u) => (
+                    <div
+                      key={u.id}
+                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-start gap-2.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-ocean shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-slate-800 font-medium">{u.note}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {formatDateTime(u.timestamp)} • Action: {u.action}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Modal Footer */}
