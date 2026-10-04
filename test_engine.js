@@ -194,8 +194,8 @@ if (!evalHeavy.isElevatedDebrisRisk) throw new Error('Debris mobilization must e
 
 const mobilizationBreakdown = evalHeavy.breakdown.find((b) => b.factor === 'Waterway Debris Mobilization');
 if (!mobilizationBreakdown) throw new Error('Missing Waterway Debris Mobilization factor in breakdown');
-if (!mobilizationBreakdown.detail.includes('rain can mobilize debris into drainage and connected waterways')) {
-  throw new Error('Debris breakdown must include "rain can mobilize debris into drainage and connected waterways"');
+if (!mobilizationBreakdown.detail.includes('Heavy rain can mobilize debris into drainage systems and connected urban waterways.')) {
+  throw new Error('Debris breakdown must include "Heavy rain can mobilize debris into drainage systems and connected urban waterways."');
 }
 console.log(` - Factor detail: "${mobilizationBreakdown.detail}"`);
 console.log('✓ Heavy Rain debris mobilization elevation verified successfully.');

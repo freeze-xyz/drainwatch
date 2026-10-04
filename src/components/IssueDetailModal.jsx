@@ -416,7 +416,7 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
                   Waterway Debris Mobilization Elevated (+2)
                 </span>
                 <p className="mt-0.5 leading-relaxed font-medium">
-                  Under Heavy Rain, rain can mobilize debris into drainage and connected waterways, creating acute downstream runoff risks.
+                  Heavy rain can mobilize debris into drainage systems and connected urban waterways.
                 </p>
               </div>
             </div>

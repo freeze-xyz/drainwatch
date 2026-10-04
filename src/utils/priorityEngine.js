@@ -451,7 +451,7 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     mobilizationScore = 2;
     breakdown.push({
       factor: 'Waterway Debris Mobilization',
-      detail: 'rain can mobilize debris into drainage and connected waterways',
+      detail: 'Heavy rain can mobilize debris into drainage systems and connected urban waterways.',
       value: mobilizationScore,
       sign: '+',
     });
@@ -522,7 +522,7 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
   if (confirmationScore > 0) summaryParts.push(`confirmed +${confirmationScore}`);
   if (hasVulnerability) summaryParts.push(`vulnerability +${vulnScore}`);
   if (ageItem.score > 0) summaryParts.push(`age +${ageItem.score}`);
-  if (mobilizationScore > 0) summaryParts.push(`debris mobilization (rain can mobilize debris into drainage and connected waterways) +${mobilizationScore}`);
+  if (mobilizationScore > 0) summaryParts.push(`debris mobilization (Heavy rain can mobilize debris into drainage systems and connected urban waterways.) +${mobilizationScore}`);
   if (resolutionDeduction > 0) summaryParts.push(`${report.status} -${resolutionDeduction}`);
   if (isNeedsEvidence) summaryParts.push(`[capped: needs evidence]`);
 
@@ -532,7 +532,7 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
   const keyFactors = [];
   if (severityScore >= 6) keyFactors.push(`severe visible condition (${issueName.toLowerCase()})`);
   if (weatherScore >= 3) keyFactors.push(`upcoming forecast rainfall (${normalizedWeather})`);
-  if (mobilizationScore > 0) keyFactors.push(`debris mobilization risk during heavy rain (rain can mobilize debris into drainage and connected waterways)`);
+  if (mobilizationScore > 0) keyFactors.push(`debris mobilization risk during heavy rain (Heavy rain can mobilize debris into drainage systems and connected urban waterways.)`);
   if (photoEvidenceScore > 0) keyFactors.push(`current photo-supported evidence`);
   if (confirmationScore > 0) keyFactors.push(`community confirmation`);
   if (hasVulnerability) keyFactors.push(`proximity to vulnerable infrastructure (${vulnDetails})`);
@@ -562,6 +562,6 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     priorityTagline: 'Priority for safe verification before forecast rain.',
     tags,
     isElevatedDebrisRisk: mobilizationScore > 0,
-    mobilizationExplanation: mobilizationScore > 0 ? 'rain can mobilize debris into drainage and connected waterways' : null,
+    mobilizationExplanation: mobilizationScore > 0 ? 'Heavy rain can mobilize debris into drainage systems and connected urban waterways.' : null,
   };
 }

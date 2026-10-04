@@ -34,7 +34,7 @@ DrainWatch features a single integrated reporting and readiness system across **
 
 ### Heavy Rain Debris Mobilization Dynamics:
 Under **Heavy Rain (>20mm / 24h)**, unresolved litter hotspots, illegal dumping piles, and drainage blockages are elevated in priority with a transparent explanation:
-> *“rain can mobilize debris into drainage and connected waterways”*
+> *“Heavy rain can mobilize debris into drainage systems and connected urban waterways.”*
 
 ### Why This Matters to Urban Waterways:
 > *“Heavy rain can move litter, sediment, and visible debris from streets into drainage systems and connected waterways. This is a community observation of a potential runoff pathway; it does not measure water quality, contaminants, or ecological health.”*
