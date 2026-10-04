@@ -1,41 +1,52 @@
-# DrainWatch — Weather-Triggered Community Drain Readiness
+# DrainWatch: Stormwater &amp; Litter Watch
 
 > **OneAquaHealth IEEE Global Hackathon 2026**  
 > **Primary Track**: Track 6 — Resilience Informatics  
-> **Target Scenario**: Batu Pahat, Johor, Malaysia (Monsoon Storm Readiness)  
-> **Persistent Disclaimer**: *Prototype using simulated starter reports. Not an official flood warning or emergency service.*
+> **Subtitle**: *Community stormwater and litter readiness for healthier urban waterways.*  
+> **Target Scenario**: Batu Pahat, Johor, Malaysia (Monsoon Storm Readiness & Urban Freshwater Ecosystems)  
+> **Persistent Disclaimer**: *Prototype using simulated starter reports. Not an official flood or water-quality warning, emergency service, or authority reporting channel.*
 
 ---
 
 ## 1. Project Overview
 
-**DrainWatch** is an explainable, mobile-first community web prototype designed to help local residents, neighborhood gotong-royong groups, and municipal coordinators prepare for heavy rainfall events. 
+**DrainWatch: Stormwater & Litter Watch** is an explainable, mobile-first community web prototype designed to help local residents, gotong-royong groups, and municipal coordinators protect both neighborhood drainage capacity and downstream freshwater ecosystems.
 
-Rather than relying on black-box predictions or waiting for surface water to pool into emergencies, DrainWatch combines **real location-based precipitation forecast data** from Open-Meteo with **geo-tagged citizen reports of visible drainage blockages** (e.g. leaf litter, trash buildup, damaged culvert walls) to dynamically compute an **explainable priority score** for safe inspection before the storm arrives.
+Rather than relying on black-box predictions or waiting for surface runoff to mobilize waste into waterways, DrainWatch combines **real location-based precipitation forecast data** from Open-Meteo with **geo-tagged citizen reports of visible drainage blockages and litter/dumping hotspots** to dynamically compute an **explainable priority score** for safe inspection before the storm arrives.
 
 ---
 
-## 2. The Real Problem Addressed
+## 2. Integrated Issue Categories & Freshwater Ecosystem Scope
 
-In many Southeast Asian urban and suburban corridors like Batu Pahat, Johor, localized street inundation often occurs not because regional drainage capacity is fundamentally exceeded, but because **minor, visible surface obstructions choke street inlets, culverts, and grating slots** immediately prior to downpours.
+DrainWatch features a single integrated reporting and readiness system across **6 core categories**:
+1. **Drainage blockage**: Clogged culverts, silt buildup, or obstructed inlets.
+2. **Street litter hotspot**: Accumulated plastics, bottles, packaging along curbs.
+3. **Illegal dumping**: Bulk rubbish, construction debris, or waste piles near drains.
+4. **Suspected discharge**: Discolored surface runoff, oily sheen, or gray water outflow.
+5. **Standing water**: Stagnant ponding, trapped puddle, or slow street drainage.
+6. **Damaged drainage asset**: Cracked concrete sidewalls, collapsed conduits, or broken grates.
 
-### Challenges in Current Practice:
-1. **Coordination Lag**: Municipal maintenance crews cannot inspect every minor neighborhood inlet before a storm.
-2. **Citizen Frustration**: Residents observe clogged drains but have no structured channel to coordinate safe verification or understand which issues are most urgent given incoming rainfall.
-3. **Data Disconnect**: Weather forecasts exist in isolation from community physical infrastructure reports.
+### Official Report Tags:
+- **“Flooding risk”**: Issues impeding hydraulic conveyance.
+- **“Runoff pollution risk”**: Debris, litter, or waste that stormwater can wash into the drainage network.
+- **“Potential freshwater ecosystem impact”**: Issues with immediate or downstream threat to canals, streams, and coastal tributaries.
+- **“Needs review”**: Provisional reports requiring photo evidence or community verification.
 
-### The DrainWatch Solution:
-DrainWatch bridges this gap by automatically elevating the priority of reported blockages when an Open-Meteo forecast indicates incoming moderate or heavy rainfall, guiding communities toward **safe, proactive verification** before precipitation starts.
+### Heavy Rain Debris Mobilization Dynamics:
+Under **Heavy Rain (>20mm / 24h)**, unresolved litter hotspots, illegal dumping piles, and drainage blockages are elevated in priority with a transparent explanation:
+> *“rain can mobilize debris into drainage and connected waterways”*
+
+### Why This Matters to Urban Waterways:
+> *“Heavy rain can move litter, sediment, and visible debris from streets into drainage systems and connected waterways. This is a community observation of a potential runoff pathway; it does not measure water quality, contaminants, or ecological health.”*
 
 ---
 
 ## 3. Product Boundaries & Safety Principles
 
-DrainWatch enforces strict product and ethical boundaries:
-- **Scenario-based community readiness prototype**: It is NOT an official flood warning, flood prediction, drainage asset map, emergency service, or authority-reporting system. Starter reports and locations are simulated and illustrative.
-- **Wording Standard**: Strictly uses *"rain readiness," "reported drainage issue," "priority for safe verification,"* and *"forecast-based context."* Never claims flood prediction.
-- **Safety Directive**: Community observers are instructed to **never enter drains or floodwater**, and to report dangerous or persistent obstructions directly to local authorities (such as Majlis Perbandaran Batu Pahat - MPBP). DrainWatch does not transmit reports to any authority.
-- **Public Location Observation**: All submissions require observer confirmation that data was recorded safely from public walkways or curbs.
+DrainWatch enforces strict product, environmental, and ethical boundaries:
+- **Scenario-based community readiness prototype**: It is NOT an official flood warning, flood prediction, water-quality measurement, drainage asset map, emergency service, or authority-reporting system. Starter reports and locations are simulated and illustrative.
+- **Wording Standard**: Strictly uses *"rain readiness," "Community Stormwater Readiness Notice — not an official flood or water-quality warning," "reported drainage issue,"* and *"forecast-based context."* Never claims flood prediction or contaminant detection.
+- **Safety Directive**: Community observers are instructed to **observe only from a safe public location. Never enter drains, remove covers, walk or drive through floodwater, or approach moving water or unsafe roads. Follow official local emergency guidance.**
 - **Privacy Safeguards**: Observers must avoid photographing identifiable people, private homes, vehicle license plates, or sensitive installations.
 
 ---
@@ -117,11 +128,15 @@ $$P = \text{Severity} + \text{Weather} + \text{Age} + \text{PhotoEvidence} + \te
 ## 6. Seed Dataset (Batu Pahat, Johor)
 
 All seed reports are clearly marked: *"Demo workspace — simulated citizen reports. Location points are illustrative."*
-1. **Community Park Drain** (Jalan Tasik): Partial blockage, moderate, 2 days ago, pedestrian route.
-2. **Riverside Walk Inlet** (Sungai Batu Pahat): Overflowing surcharging drain, severe, 6 hours ago, near homes.
-3. **Market Lane Culvert** (Pasar Besar area): Heavily blocked box culvert, severe, 5 days ago, near homes & school, reported to authority.
-4. **Campus Access Drain** (Jalan Universiti): Damaged concrete wall & grate, moderate, 9 days ago, school & pedestrian route, verified.
-5. **Housing Area Storm Drain** (Taman Soga): Silt trap issue, minor, 12 hours ago, resolved.
+1. **Community Park Drain** (Jalan Tasik): Partial blockage, moderate, 2 days ago, pedestrian route (Needs photo evidence).
+2. **Riverside Walk Inlet** (Sungai Batu Pahat): Overflowing surcharging drain, severe, 6 hours ago, near homes (Community-confirmed).
+3. **Market Lane Culvert** (Pasar Besar area): Heavily blocked box culvert, severe, 5 days ago, near homes & school (Reported).
+4. **Campus Access Drain** (Jalan Universiti): Damaged concrete wall & grate, moderate, 9 days ago, school & pedestrian route (Verified).
+5. **Housing Area Storm Drain** (Taman Soga): Silt trap issue, minor, 12 hours ago (Resolved).
+6. **Pasar Malam Street Litter Hotspot** (Jalan Penggaram): Accumulated single-use packaging & plastics along curb, moderate, 1 day ago (Photo-supported).
+7. **Jalan Rahmat Bulk Waste Dumping** (Ditch Reserve): Construction debris and waste pile in drainage reserve, severe, 18 hours ago (Community-confirmed).
+8. **Simpang Rantai Outfall Runoff** (Tributary Confluence): Cloudy surface discharge entering tributary culvert, moderate, 8 hours ago (Reported).
+9. **Taman Maju Low-Lying Ponding** (Residential Curb): Stagnant stormwater ponding across low-gradient curb, minor, 2 days ago (Coordinator-verified).
 
 ---
 

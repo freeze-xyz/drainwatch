@@ -313,10 +313,10 @@ export default function App() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
           <div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 font-sans">
-              Community Rain Readiness
+              DrainWatch: Stormwater &amp; Litter Watch
             </h1>
             <p className="text-xs text-slate-500">
-              Batu Pahat, Johor • Citizen-reported drainage readiness with forecast context
+              Community stormwater and litter readiness for healthier urban waterways.
             </p>
           </div>
 
@@ -350,7 +350,7 @@ export default function App() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full">
-                    Community Readiness Notice — not an official flood warning.
+                    Community Stormwater Readiness Notice — not an official flood or water-quality warning.
                   </span>
                   <span className="text-xs text-indigo-200 font-medium">
                     {nearbyAlerts.length} nearby issue{nearbyAlerts.length === 1 ? '' : 's'}

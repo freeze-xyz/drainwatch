@@ -18,19 +18,177 @@
  * - Low-evidence reports cannot trigger Critical priority or 1 km nearby readiness notices.
  */
 
+// 6 Integrated Issue Categories for Stormwater & Litter Watch
+export const ISSUE_CATEGORIES = {
+  drainage_blockage: {
+    id: 'drainage_blockage',
+    label: 'Drainage blockage',
+    desc: 'Clogged culverts, silt buildup, or obstructed inlets',
+    score: 6,
+    color: '#ef4444',
+    icon: 'AlertTriangle',
+    defaultTags: ['Flooding risk'],
+  },
+  litter_hotspot: {
+    id: 'litter_hotspot',
+    label: 'Street litter hotspot',
+    desc: 'Accumulated plastics, bottles, packaging along curbs',
+    score: 5,
+    color: '#f59e0b',
+    icon: 'Trash2',
+    defaultTags: ['Runoff pollution risk'],
+  },
+  illegal_dumping: {
+    id: 'illegal_dumping',
+    label: 'Illegal dumping',
+    desc: 'Bulk rubbish, construction debris, or waste piles near drains',
+    score: 7,
+    color: '#ea580c',
+    icon: 'AlertOctagon',
+    defaultTags: ['Runoff pollution risk', 'Potential freshwater ecosystem impact'],
+  },
+  suspected_discharge: {
+    id: 'suspected_discharge',
+    label: 'Suspected discharge',
+    desc: 'Discolored surface runoff, oily sheen, or gray water outflow',
+    score: 7,
+    color: '#8b5cf6',
+    icon: 'Droplets',
+    defaultTags: ['Potential freshwater ecosystem impact', 'Runoff pollution risk'],
+  },
+  standing_water: {
+    id: 'standing_water',
+    label: 'Standing water',
+    desc: 'Stagnant ponding, trapped puddle, or slow street drainage',
+    score: 4,
+    color: '#06b6d4',
+    icon: 'Waves',
+    defaultTags: ['Flooding risk'],
+  },
+  damaged_asset: {
+    id: 'damaged_asset',
+    label: 'Damaged drainage asset',
+    desc: 'Cracked concrete sidewall, missing or broken grate',
+    score: 5,
+    color: '#64748b',
+    icon: 'Wrench',
+    defaultTags: ['Flooding risk'],
+  },
+};
+
 export const SEVERITY_SCORES = {
-  partial_blockage: 3,
-  damaged: 5,
+  // 6 official categories
+  drainage_blockage: 6,
+  litter_hotspot: 5,
+  illegal_dumping: 7,
+  suspected_discharge: 7,
+  standing_water: 4,
+  damaged_asset: 5,
+
+  // Legacy mappings for backward compatibility
   blocked: 6,
   overflowing: 8,
+  damaged: 5,
+  partial_blockage: 3,
 };
 
 export const SEVERITY_LABELS = {
-  partial_blockage: 'Partial Blockage',
-  damaged: 'Damaged Structure',
-  blocked: 'Blocked Drain',
-  overflowing: 'Overflowing / Surcharging',
+  // 6 official categories
+  drainage_blockage: 'Drainage blockage',
+  litter_hotspot: 'Street litter hotspot',
+  illegal_dumping: 'Illegal dumping',
+  suspected_discharge: 'Suspected discharge',
+  standing_water: 'Standing water',
+  damaged_asset: 'Damaged drainage asset',
+
+  // Legacy mappings
+  blocked: 'Drainage blockage',
+  overflowing: 'Drainage blockage (Overflowing)',
+  damaged: 'Damaged drainage asset',
+  partial_blockage: 'Drainage blockage (Partial)',
 };
+
+export const REPORT_TAG_CONFIG = {
+  'Flooding risk': {
+    label: 'Flooding risk',
+    badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
+    dotColor: '#ef4444',
+  },
+  'Runoff pollution risk': {
+    label: 'Runoff pollution risk',
+    badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+    dotColor: '#f59e0b',
+  },
+  'Potential freshwater ecosystem impact': {
+    label: 'Potential freshwater ecosystem impact',
+    badgeClass: 'bg-teal-50 text-teal-800 border-teal-200',
+    dotColor: '#0d9488',
+  },
+  'Needs review': {
+    label: 'Needs review',
+    badgeClass: 'bg-slate-100 text-slate-700 border-slate-300 border-dashed',
+    dotColor: '#64748b',
+  },
+};
+
+/**
+ * Computes official report tags based on issue characteristics and weather context
+ */
+export function getReportTags(report, weatherStatus = 'moderate') {
+  const tags = new Set();
+  const type = report.issueType;
+  const isHeavyRain = ['heavy'].includes(weatherStatus?.toLowerCase());
+
+  // 1. Needs review: Text-only, zero confirmations, or unverified
+  if (
+    report.evidenceState === 'needs_evidence' ||
+    !report.photoDataUrl ||
+    Number(report.confirmations || 0) === 0 ||
+    report.status === 'reported'
+  ) {
+    tags.add('Needs review');
+  }
+
+  // 2. Flooding risk: Blockages, damaged assets, standing ponding, or severe issues
+  if (
+    ['drainage_blockage', 'standing_water', 'damaged_asset', 'blocked', 'overflowing', 'damaged'].includes(type) ||
+    report.severity === 'severe'
+  ) {
+    tags.add('Flooding risk');
+  }
+
+  // 3. Runoff pollution risk: Litter, dumping, suspected runoff, or rain-mobilized blockages
+  if (
+    ['litter_hotspot', 'illegal_dumping', 'suspected_discharge'].includes(type) ||
+    (isHeavyRain && ['drainage_blockage', 'blocked', 'overflowing'].includes(type))
+  ) {
+    tags.add('Runoff pollution risk');
+  }
+
+  // 4. Potential freshwater ecosystem impact: Discharges, dumping, or proximity to waterways
+  if (
+    ['suspected_discharge', 'illegal_dumping', 'litter_hotspot'].includes(type) ||
+    report.title?.toLowerCase().includes('river') ||
+    report.title?.toLowerCase().includes('inlet') ||
+    report.title?.toLowerCase().includes('outfall') ||
+    report.note?.toLowerCase().includes('waterway') ||
+    report.note?.toLowerCase().includes('inlet') ||
+    report.note?.toLowerCase().includes('tributary')
+  ) {
+    tags.add('Potential freshwater ecosystem impact');
+  }
+
+  // Merge any explicitly provided tags
+  if (Array.isArray(report.tags)) {
+    report.tags.forEach((t) => {
+      if (REPORT_TAG_CONFIG[t]) {
+        tags.add(t);
+      }
+    });
+  }
+
+  return Array.from(tags);
+}
 
 export const WEATHER_SCORES = {
   low: 0,       // < 5mm / 24h
@@ -276,6 +434,29 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     sign: '-',
   });
 
+  // 8. Waterway Debris Mobilization Under Heavy Rain
+  // "Under Heavy Rain, elevate unresolved litter/dumping/blockage items with a transparent
+  // 'rain can mobilize debris into drainage and connected waterways' explanation."
+  const isDebrisMobilizationRisk = [
+    'drainage_blockage',
+    'litter_hotspot',
+    'illegal_dumping',
+    'blocked',
+    'overflowing',
+    'partial_blockage',
+  ].includes(report.issueType);
+
+  let mobilizationScore = 0;
+  if (normalizedWeather === 'heavy' && report.status !== 'resolved' && isDebrisMobilizationRisk) {
+    mobilizationScore = 2;
+    breakdown.push({
+      factor: 'Waterway Debris Mobilization',
+      detail: 'rain can mobilize debris into drainage and connected waterways',
+      value: mobilizationScore,
+      sign: '+',
+    });
+  }
+
   // Raw Total Score
   const rawScore =
     severityScore +
@@ -283,7 +464,8 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     ageItem.score +
     photoEvidenceScore +
     confirmationScore +
-    vulnScore -
+    vulnScore +
+    mobilizationScore -
     resolutionDeduction;
 
   let finalScore = Math.max(0, rawScore);
@@ -340,6 +522,7 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
   if (confirmationScore > 0) summaryParts.push(`confirmed +${confirmationScore}`);
   if (hasVulnerability) summaryParts.push(`vulnerability +${vulnScore}`);
   if (ageItem.score > 0) summaryParts.push(`age +${ageItem.score}`);
+  if (mobilizationScore > 0) summaryParts.push(`debris mobilization (rain can mobilize debris into drainage and connected waterways) +${mobilizationScore}`);
   if (resolutionDeduction > 0) summaryParts.push(`${report.status} -${resolutionDeduction}`);
   if (isNeedsEvidence) summaryParts.push(`[capped: needs evidence]`);
 
@@ -349,6 +532,7 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
   const keyFactors = [];
   if (severityScore >= 6) keyFactors.push(`severe visible condition (${issueName.toLowerCase()})`);
   if (weatherScore >= 3) keyFactors.push(`upcoming forecast rainfall (${normalizedWeather})`);
+  if (mobilizationScore > 0) keyFactors.push(`debris mobilization risk during heavy rain (rain can mobilize debris into drainage and connected waterways)`);
   if (photoEvidenceScore > 0) keyFactors.push(`current photo-supported evidence`);
   if (confirmationScore > 0) keyFactors.push(`community confirmation`);
   if (hasVulnerability) keyFactors.push(`proximity to vulnerable infrastructure (${vulnDetails})`);
@@ -359,6 +543,8 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     : `This location is evaluated with baseline readiness parameters.`;
 
   const attentionParagraph = `${factorExplanation} In accordance with the explainable scoring rule (P = ${finalScore}), this spot warrants timely, safe public verification before incoming precipitation. Observers must never step into culverts or runoff water.`;
+
+  const tags = getReportTags(report, weatherStatus);
 
   return {
     score: finalScore,
@@ -374,5 +560,8 @@ export function calculatePriorityScore(report, weatherStatus = 'moderate') {
     eligibleForNearbyNotice,
     isNeedsEvidence,
     priorityTagline: 'Priority for safe verification before forecast rain.',
+    tags,
+    isElevatedDebrisRisk: mobilizationScore > 0,
+    mobilizationExplanation: mobilizationScore > 0 ? 'rain can mobilize debris into drainage and connected waterways' : null,
   };
 }

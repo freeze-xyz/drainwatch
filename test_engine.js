@@ -4,17 +4,19 @@ import {
   SEVERITY_SCORES,
   WEATHER_SCORES,
   EVIDENCE_STATES,
+  ISSUE_CATEGORIES,
+  getReportTags,
 } from './src/utils/priorityEngine.js';
 import { SEED_REPORTS } from './src/data/seedReports.js';
 import { getRainStatus } from './src/api/weather.js';
 import { calculateDistanceKm } from './src/utils/formatters.js';
 
-console.log('--- RUNNING DRAINWATCH PHOTO EVIDENCE TRUST SUITE ---');
+console.log('--- RUNNING DRAINWATCH STORMWATER & LITTER TRUST SUITE ---');
 
 // 1. Verify Seed Data & Evidence States
 console.log(`\n[Test 1] Verifying Seed Data (${SEED_REPORTS.length} reports):`);
-if (SEED_REPORTS.length !== 5) {
-  throw new Error(`Expected exactly 5 seed reports, got ${SEED_REPORTS.length}`);
+if (SEED_REPORTS.length !== 9) {
+  throw new Error(`Expected exactly 9 seed reports, got ${SEED_REPORTS.length}`);
 }
 
 const expectedTitles = [
@@ -23,10 +25,14 @@ const expectedTitles = [
   'Market Lane Culvert',
   'Campus Access Drain',
   'Housing Area Storm Drain',
+  'Pasar Malam Street Litter Hotspot',
+  'Jalan Rahmat Bulk Waste Dumping',
+  'Simpang Rantai Outfall Runoff',
+  'Taman Maju Low-Lying Ponding',
 ];
 
 SEED_REPORTS.forEach((report, i) => {
-  console.log(` - Checking Report #${i + 1}: ${report.title} [Evidence: ${report.evidenceState}]`);
+  console.log(` - Checking Report #${i + 1}: ${report.title} [Evidence: ${report.evidenceState}] [Type: ${report.issueType}]`);
   if (!expectedTitles.includes(report.title)) {
     throw new Error(`Unexpected title: ${report.title}`);
   }
@@ -133,4 +139,65 @@ const evalConfirmed = calculatePriorityScore(
 console.log(` - Community confirmed report score: ${evalConfirmed.score}`);
 if (evalConfirmed.score !== 11) throw new Error(`Expected score 11, got ${evalConfirmed.score}`);
 
-console.log('\n✓ ALL PHOTO EVIDENCE TRUST TESTS PASSED WITH 100% SUCCESS!\n');
+// 6. Verify 6 Issue Categories and Report Tags
+console.log('\n[Test 6] Verifying 6 Integrated Issue Categories & Ecosystem Tags:');
+const requiredCategories = [
+  'drainage_blockage',
+  'litter_hotspot',
+  'illegal_dumping',
+  'suspected_discharge',
+  'standing_water',
+  'damaged_asset',
+];
+requiredCategories.forEach((catKey) => {
+  if (!ISSUE_CATEGORIES[catKey]) {
+    throw new Error(`Missing issue category: ${catKey}`);
+  }
+  console.log(` - Category verified: ${catKey} -> "${ISSUE_CATEGORIES[catKey].label}"`);
+});
+
+const dumpingReport = SEED_REPORTS.find((r) => r.issueType === 'illegal_dumping');
+const dumpingTags = getReportTags(dumpingReport, 'moderate');
+console.log(` - Illegal dumping tags: ${JSON.stringify(dumpingTags)}`);
+if (!dumpingTags.includes('Runoff pollution risk') || !dumpingTags.includes('Potential freshwater ecosystem impact')) {
+  throw new Error('Dumping report must contain pollution and ecosystem impact tags');
+}
+console.log('✓ 6 issue categories and ecosystem tags verified successfully.');
+
+// 7. Verify Heavy Rain Debris Mobilization Elevation
+console.log('\n[Test 7] Verifying Heavy Rain Debris Mobilization Elevation:');
+const litterItem = {
+  id: 'test-litter-elevation',
+  title: 'Test Street Litter Hotspot',
+  issueType: 'litter_hotspot',
+  severity: 'moderate', // 5
+  reportedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+  photoDataUrl: 'data:image/svg+xml;utf8,<svg></svg>',
+  photoUploadedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+  evidenceState: 'photo_submitted',
+  confirmations: 0,
+  vulnerableNearby: [],
+  status: 'active',
+};
+
+// In moderate rain: score = 5 (litter) + 3 (moderate) + 0 (age) + 2 (photo) = 10
+const evalMod = calculatePriorityScore(litterItem, 'moderate');
+console.log(` - Litter in Moderate rain: score=${evalMod.score}, isElevated=${evalMod.isElevatedDebrisRisk}`);
+if (evalMod.score !== 10) throw new Error(`Expected score 10 in moderate rain, got ${evalMod.score}`);
+if (evalMod.isElevatedDebrisRisk) throw new Error('Debris mobilization elevation should not fire in moderate rain');
+
+// In heavy rain: score = 5 (litter) + 6 (heavy) + 0 (age) + 2 (photo) + 2 (mobilization) = 15!
+const evalHeavy = calculatePriorityScore(litterItem, 'heavy');
+console.log(` - Litter in Heavy rain: score=${evalHeavy.score}, isElevated=${evalHeavy.isElevatedDebrisRisk}`);
+if (evalHeavy.score !== 15) throw new Error(`Expected score 15 in heavy rain, got ${evalHeavy.score}`);
+if (!evalHeavy.isElevatedDebrisRisk) throw new Error('Debris mobilization must elevate in heavy rain');
+
+const mobilizationBreakdown = evalHeavy.breakdown.find((b) => b.factor === 'Waterway Debris Mobilization');
+if (!mobilizationBreakdown) throw new Error('Missing Waterway Debris Mobilization factor in breakdown');
+if (!mobilizationBreakdown.detail.includes('rain can mobilize debris into drainage and connected waterways')) {
+  throw new Error('Debris breakdown must include "rain can mobilize debris into drainage and connected waterways"');
+}
+console.log(` - Factor detail: "${mobilizationBreakdown.detail}"`);
+console.log('✓ Heavy Rain debris mobilization elevation verified successfully.');
+
+console.log('\n✓ ALL 7/7 STORMWATER & LITTER TRUST TESTS PASSED WITH 100% SUCCESS!\n');

@@ -21,12 +21,18 @@ import {
   Sparkles,
   Bell,
   BellRing,
+  Droplets,
+  Trash2,
+  Waves,
 } from 'lucide-react';
 import {
   calculatePriorityScore,
   SEVERITY_LABELS,
   VULNERABILITY_LABELS,
   EVIDENCE_STATES,
+  ISSUE_CATEGORIES,
+  REPORT_TAG_CONFIG,
+  getReportTags,
 } from '../utils/priorityEngine';
 import { formatCoordinates, formatDateTime, formatRelativeTime } from '../utils/formatters';
 
@@ -216,27 +222,46 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
                 Status: {report.status}
               </span>
 
-              {/* Issue Type */}
-              <span className="text-xs font-medium px-3 py-1 rounded-xl bg-sky-50 text-sky-800 border border-sky-200">
-                Type: {SEVERITY_LABELS[report.issueType] || report.issueType}
+              {/* Issue Category */}
+              <span className="text-xs font-semibold px-3 py-1 rounded-xl bg-sky-50 text-sky-900 border border-sky-200">
+                Category: {ISSUE_CATEGORIES[report.issueType]?.label || SEVERITY_LABELS[report.issueType] || report.issueType}
               </span>
 
-              {/* 1km Notice Eligibility Chip */}
+              {/* Stormwater Notice Eligibility Chip */}
               {evaluation.eligibleForNearbyNotice ? (
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
                   <Radio className="w-3 h-3 text-indigo-600 animate-pulse" />
-                  <span>Eligible for 1 km readiness notice</span>
+                  <span>Eligible for Community Stormwater Readiness Notice</span>
                 </span>
               ) : (
                 <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-500 border border-slate-200">
                   {evaluation.isNeedsEvidence
-                    ? '1 km notice restricted (Needs photo evidence)'
+                    ? 'Stormwater notice restricted (Needs photo evidence)'
                     : report.status === 'resolved'
                     ? 'Resolved (Inactive)'
-                    : '1 km notice restricted (Photo outdated)'}
+                    : 'Stormwater notice restricted (Photo outdated)'}
                 </span>
               )}
             </div>
+
+            {/* Ecosystem & Readiness Tags */}
+            {evaluation.tags?.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tags:</span>
+                {evaluation.tags.map((tag) => {
+                  const cfg = REPORT_TAG_CONFIG[tag] || { badgeClass: 'bg-slate-100 text-slate-700 border-slate-200', dotColor: '#64748b' };
+                  return (
+                    <span
+                      key={tag}
+                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-lg border flex items-center gap-1.5 ${cfg.badgeClass}`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dotColor }}></span>
+                      <span>{tag}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Location & Metadata */}
@@ -370,6 +395,32 @@ export function IssueDetailModal({ report, weather, onClose, onUpdateReport }) {
               {evaluation.attentionParagraph}
             </p>
           </div>
+
+          {/* Why this matters to urban waterways */}
+          <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-300/80 space-y-1.5">
+            <h4 className="text-xs font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Droplets className="w-4 h-4 text-teal-600" />
+              <span>Why this matters to urban waterways</span>
+            </h4>
+            <p className="text-xs text-teal-950 leading-relaxed font-sans font-medium">
+              Heavy rain can move litter, sediment, and visible debris from streets into drainage systems and connected waterways. This is a community observation of a potential runoff pathway; it does not measure water quality, contaminants, or ecological health.
+            </p>
+          </div>
+
+          {/* Heavy Rain Debris Mobilization Notice */}
+          {evaluation.isElevatedDebrisRisk && (
+            <div className="p-3.5 rounded-2xl bg-orange-500/10 border border-orange-300/80 text-xs text-orange-950 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-orange-900 uppercase tracking-wider text-[11px] block">
+                  Waterway Debris Mobilization Elevated (+2)
+                </span>
+                <p className="mt-0.5 leading-relaxed font-medium">
+                  Under Heavy Rain, rain can mobilize debris into drainage and connected waterways, creating acute downstream runoff risks.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Community Action Section */}
           <div className="space-y-4 pt-3 border-t border-slate-200">

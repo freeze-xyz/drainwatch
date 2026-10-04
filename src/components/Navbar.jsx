@@ -38,14 +38,14 @@ export function Navbar({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg sm:text-xl font-bold tracking-tight text-white font-sans">
-                  DrainWatch
+                  DrainWatch: Stormwater &amp; Litter Watch
                 </span>
                 <span className="hidden sm:inline-block text-[10px] font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2 py-0.5 rounded-full">
                   Batu Pahat
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 hidden md:block">
-                Community Drain Readiness • Track 6: Resilience Informatics
+                Community stormwater and litter readiness for healthier urban waterways.
               </p>
             </div>
           </div>

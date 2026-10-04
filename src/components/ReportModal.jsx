@@ -13,7 +13,13 @@ import {
   Layers,
   Info,
 } from 'lucide-react';
-import { SEVERITY_SCORES, SEVERITY_LABELS, VULNERABILITY_LABELS } from '../utils/priorityEngine';
+import {
+  SEVERITY_SCORES,
+  SEVERITY_LABELS,
+  VULNERABILITY_LABELS,
+  ISSUE_CATEGORIES,
+  REPORT_TAG_CONFIG,
+} from '../utils/priorityEngine';
 
 export function ReportModal({
   isOpen,
@@ -40,8 +46,9 @@ export function ReportModal({
   const [title, setTitle] = useState('');
   const [latitude, setLatitude] = useState(pickedLocation?.latitude || 1.8548);
   const [longitude, setLongitude] = useState(pickedLocation?.longitude || 102.9325);
-  const [issueType, setIssueType] = useState('blocked');
+  const [issueType, setIssueType] = useState('drainage_blockage');
   const [severity, setSeverity] = useState('moderate');
+  const [selectedTags, setSelectedTags] = useState(['Flooding risk']);
   const [vulnerabilities, setVulnerabilities] = useState(['homes']);
   const [note, setNote] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState('');
@@ -137,6 +144,7 @@ export function ReportModal({
       isAsset: isAssetMapping,
       assetLabel: isAssetMapping ? 'Community-mapped — requires verification' : undefined,
       evidenceState,
+      tags: isAssetMapping ? ['Needs review'] : selectedTags,
       updates: [
         {
           id: `u-init-${Date.now()}`,
@@ -153,6 +161,20 @@ export function ReportModal({
 
     onSubmitReport(newReport);
     onClose();
+  };
+
+  const handleSelectCategory = (catId) => {
+    setIssueType(catId);
+    const cat = ISSUE_CATEGORIES[catId];
+    if (cat?.defaultTags) {
+      setSelectedTags((prev) => Array.from(new Set([...prev, ...cat.defaultTags])));
+    }
+  };
+
+  const toggleTag = (tagName) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]
+    );
   };
 
   return (
@@ -315,32 +337,61 @@ export function ReportModal({
           {/* Issue Specifics (only in issue mode) */}
           {submissionMode === 'issue' && (
             <>
-              {/* Issue Type Selector */}
+              {/* Issue Category Selector (6 Official Categories) */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Visible Drainage Issue Type *
+                  Issue Category *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'partial_blockage', label: 'Partial Blockage (+3)', desc: 'Leaves, silt, minor debris' },
-                    { id: 'blocked', label: 'Blocked Drain (+6)', desc: 'Clogged culvert, refuse buildup' },
-                    { id: 'overflowing', label: 'Overflowing (+8)', desc: 'Surcharging over curb onto street' },
-                    { id: 'damaged', label: 'Damaged (+5)', desc: 'Broken grate or collapsed sidewall' },
-                  ].map((item) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {Object.values(ISSUE_CATEGORIES).map((cat) => (
                     <button
                       type="button"
-                      key={item.id}
-                      onClick={() => setIssueType(item.id)}
+                      key={cat.id}
+                      onClick={() => handleSelectCategory(cat.id)}
                       className={`p-2.5 rounded-xl border text-left transition ${
-                        issueType === item.id
+                        issueType === cat.id
                           ? 'border-ocean bg-sky-50/80 ring-2 ring-ocean/30'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <p className="text-xs font-bold text-slate-900">{item.label}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{item.desc}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-900">{cat.label}</p>
+                        <span className="text-[10px] font-mono font-bold text-slate-400">+{cat.score}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{cat.desc}</p>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Environmental / Readiness Tags */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Readiness &amp; Ecosystem Tags
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.keys(REPORT_TAG_CONFIG).map((tagName) => {
+                    const isSelected = selectedTags.includes(tagName);
+                    const cfg = REPORT_TAG_CONFIG[tagName];
+                    return (
+                      <button
+                        type="button"
+                        key={tagName}
+                        onClick={() => toggleTag(tagName)}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 ${
+                          isSelected
+                            ? `${cfg.badgeClass} ring-1 ring-slate-400/30`
+                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: isSelected ? cfg.dotColor : '#94a3b8' }}
+                        />
+                        <span>{tagName}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

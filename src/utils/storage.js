@@ -5,7 +5,7 @@
 
 import { SEED_REPORTS } from '../data/seedReports.js';
 
-const STORAGE_KEY = 'drainwatch_reports_v1';
+const STORAGE_KEY = 'drainwatch_reports_v2';
 
 export function getStoredReports() {
   try {

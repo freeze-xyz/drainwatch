@@ -11,12 +11,13 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
-import { calculatePriorityScore, SEVERITY_LABELS } from '../utils/priorityEngine';
+import { calculatePriorityScore, SEVERITY_LABELS, ISSUE_CATEGORIES, REPORT_TAG_CONFIG } from '../utils/priorityEngine';
 import { formatRelativeTime } from '../utils/formatters';
 
 export function PriorityList({ reports, weatherStatus, onSelectReport, selectedReportId }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterState, setFilterState] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   // Compute priority scores and rank
   const rankedReports = useMemo(() => {
@@ -34,30 +35,42 @@ export function PriorityList({ reports, weatherStatus, onSelectReport, selectedR
       });
   }, [reports, weatherStatus]);
 
-  // Filter based on search query and evidence/priority filters
+  // Filter based on search query, evidence/priority filters, and category filters
   const filteredReports = useMemo(() => {
     return rankedReports.filter((item) => {
       const query = searchQuery.toLowerCase().trim();
+      const catLabel = ISSUE_CATEGORIES[item.issueType]?.label || SEVERITY_LABELS[item.issueType] || '';
       const matchesSearch =
         !query ||
         item.title?.toLowerCase().includes(query) ||
         item.note?.toLowerCase().includes(query) ||
-        SEVERITY_LABELS[item.issueType]?.toLowerCase().includes(query);
+        catLabel.toLowerCase().includes(query);
 
       if (!matchesSearch) return false;
 
+      // Evidence & Priority filter
       const evKey = item.evaluation.evidenceState;
+      if (filterState === 'critical' && item.evaluation.level !== 'critical') return false;
+      if (filterState === 'photo_supported' && evKey !== 'photo_submitted' && evKey !== 'coordinator_verified') return false;
+      if (filterState === 'community_confirmed' && evKey !== 'community_confirmed') return false;
+      if (filterState === 'needs_evidence' && evKey !== 'needs_evidence') return false;
+      if (filterState === 'resolved' && item.status !== 'resolved' && evKey !== 'resolved') return false;
 
-      if (filterState === 'all') return true;
-      if (filterState === 'photo_supported') return evKey === 'photo_submitted' || evKey === 'coordinator_verified';
-      if (filterState === 'community_confirmed') return evKey === 'community_confirmed';
-      if (filterState === 'needs_evidence') return evKey === 'needs_evidence';
-      if (filterState === 'critical') return item.evaluation.level === 'critical';
-      if (filterState === 'resolved') return item.status === 'resolved' || evKey === 'resolved';
+      // Category filter
+      if (categoryFilter !== 'all') {
+        const type = item.issueType;
+        if (categoryFilter === 'drainage_blockage') {
+          if (!['drainage_blockage', 'blocked', 'overflowing', 'partial_blockage'].includes(type)) return false;
+        } else if (categoryFilter === 'damaged_asset') {
+          if (!['damaged_asset', 'damaged'].includes(type)) return false;
+        } else if (type !== categoryFilter) {
+          return false;
+        }
+      }
 
       return true;
     });
-  }, [rankedReports, searchQuery, filterState]);
+  }, [rankedReports, searchQuery, filterState, categoryFilter]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col h-[580px] lg:h-[620px]">
@@ -109,6 +122,32 @@ export function PriorityList({ reports, weatherStatus, onSelectReport, selectedR
               }`}
             >
               {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Category Filter Pills (6 Categories) */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[10px] scrollbar-none pt-1 border-t border-slate-100 mt-1.5">
+          <span className="text-[10px] font-bold text-slate-400 shrink-0">Cat:</span>
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'drainage_blockage', label: 'Blockage' },
+            { id: 'litter_hotspot', label: 'Litter' },
+            { id: 'illegal_dumping', label: 'Dumping' },
+            { id: 'suspected_discharge', label: 'Discharge' },
+            { id: 'standing_water', label: 'Standing Water' },
+            { id: 'damaged_asset', label: 'Damaged' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-2 py-0.5 rounded-md font-medium whitespace-nowrap transition text-[10px] ${
+                categoryFilter === cat.id
+                  ? 'bg-ocean text-white shadow-2xs font-semibold'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {cat.label}
             </button>
           ))}
         </div>
@@ -166,9 +205,16 @@ export function PriorityList({ reports, weatherStatus, onSelectReport, selectedR
                         <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-ocean transition leading-snug truncate">
                           {item.title}
                         </h4>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          {SEVERITY_LABELS[item.issueType] || item.issueType}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="text-[10px] font-semibold text-ocean bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                            {ISSUE_CATEGORIES[item.issueType]?.label || SEVERITY_LABELS[item.issueType] || item.issueType}
+                          </span>
+                          {evalData.isElevatedDebrisRisk && (
+                            <span className="text-[10px] font-bold text-orange-800 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+                              ⚡ Debris Mobilized
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Clean Priority Pill */}
@@ -179,11 +225,28 @@ export function PriorityList({ reports, weatherStatus, onSelectReport, selectedR
                       </span>
                     </div>
 
-                    {/* Note excerpt (replaces the complex math string!) */}
+                    {/* Note excerpt */}
                     {item.note && (
                       <p className="text-[11px] text-slate-600 line-clamp-1 italic mt-1 font-sans">
                         "{item.note}"
                       </p>
+                    )}
+
+                    {/* Ecosystem & Readiness Tags */}
+                    {evalData.tags?.length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {evalData.tags.map((tag) => {
+                          const cfg = REPORT_TAG_CONFIG[tag] || { badgeClass: 'bg-slate-100 text-slate-600 border-slate-200' };
+                          return (
+                            <span
+                              key={tag}
+                              className={`text-[9px] font-medium px-1.5 py-0.5 rounded border ${cfg.badgeClass}`}
+                            >
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
                     )}
 
                     {/* Evidence & Status Tags */}

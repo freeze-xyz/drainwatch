@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Layers, Crosshair, MapPin, AlertCircle } from 'lucide-react';
-import { calculatePriorityScore, SEVERITY_LABELS } from '../utils/priorityEngine';
+import { calculatePriorityScore, SEVERITY_LABELS, ISSUE_CATEGORIES } from '../utils/priorityEngine';
 import { formatCoordinates } from '../utils/formatters';
 
 // Helper to generate SVG colored marker icons for Leaflet
-function createLeafletIcon(color, level, isSelected = false) {
+function createLeafletIcon(color, level, isSelected = false, categoryColor = null) {
   const isCritical = level === 'critical';
   const size = isSelected ? 38 : isCritical ? 34 : 28;
-  const pulseClass = isCritical ? 'pulse-critical' : '';
 
   const svgHtml = `
     <div style="position: relative; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;">
@@ -22,7 +21,7 @@ function createLeafletIcon(color, level, isSelected = false) {
         height: ${size - 6}px;
         border-radius: 9999px;
         background-color: ${color};
-        border: 2.5px solid #ffffff;
+        border: 2.5px solid ${categoryColor || '#ffffff'};
         box-shadow: 0 4px 10px rgba(0,0,0,0.35);
         display: flex;
         align-items: center;
@@ -161,13 +160,15 @@ export function MapView({
     reports.forEach((report) => {
       const evaluation = calculatePriorityScore(report, weatherStatus);
       const isSelected = report.id === selectedReportId;
-      const icon = createLeafletIcon(evaluation.dotColor, evaluation.level, isSelected);
+      const catColor = ISSUE_CATEGORIES[report.issueType]?.color;
+      const icon = createLeafletIcon(evaluation.dotColor, evaluation.level, isSelected, catColor);
 
       const marker = L.marker([report.latitude, report.longitude], { icon });
 
       // Build custom styled popup with evidence state
       const evMeta = evaluation.evidenceMeta;
       const photoFreshness = evaluation.photoFreshness;
+      const categoryLabel = ISSUE_CATEGORIES[report.issueType]?.label || SEVERITY_LABELS[report.issueType] || report.issueType;
 
       const popupHtml = `
         <div style="font-family: system-ui, sans-serif; width: 235px; padding: 12px 14px;">
@@ -192,8 +193,8 @@ export function MapView({
             }
           </div>
 
-          <p style="font-size: 11px; color: #475569; margin: 0 0 10px 0;">
-            ${SEVERITY_LABELS[report.issueType] || report.issueType}
+          <p style="font-size: 11px; font-weight: 600; color: #0284c7; margin: 0 0 10px 0;">
+            ${categoryLabel}
           </p>
           <div style="display: flex; gap: 6px;">
             <button id="btn-inspect-${report.id}" style="
@@ -300,28 +301,46 @@ export function MapView({
         </button>
       </div>
 
-      {/* Sleek, Unobtrusive Map Legend Bar */}
-      <div className="absolute bottom-3 left-3 right-3 sm:right-auto z-10 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl shadow-md border border-slate-200/90 text-[10px]">
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-700">
-          <span className="font-bold uppercase tracking-wider text-slate-900 text-[9px]">Priority:</span>
+      {/* Sleek, Unobtrusive Map Legend Bar for 6 Categories & Priority Levels */}
+      <div className="absolute bottom-3 left-3 right-3 sm:right-auto z-10 bg-white/95 backdrop-blur-xs px-3 py-2 rounded-xl shadow-md border border-slate-200/90 text-[10px] max-w-lg">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 pb-1 mb-1.5">
+          <span className="font-bold uppercase tracking-wider text-slate-900 text-[10px]">
+            6 Issue Categories
+          </span>
+          <span className="text-[9px] text-slate-400">Stormwater &amp; Litter Watch</span>
+        </div>
+
+        {/* 6 Issue Categories */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-slate-700 pb-1.5 border-b border-slate-100 text-[10px]">
+          {Object.values(ISSUE_CATEGORIES).map((cat) => (
+            <div key={cat.id} className="flex items-center gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+              <span className="truncate font-medium">{cat.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Priority Levels */}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-slate-600 pt-1 text-[9px]">
+          <span className="font-bold text-slate-800">Priority:</span>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block animate-pulse"></span>
             <span>Critical (&ge;14)</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block"></span>
             <span>High (10–13)</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
             <span>Med (6–9)</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block"></span>
             <span>Low (&le;5)</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
             <span>Resolved</span>
           </div>
         </div>
