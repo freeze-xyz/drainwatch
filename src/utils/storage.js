@@ -5,7 +5,7 @@
 
 import { SEED_REPORTS } from '../data/seedReports.js';
 
-const STORAGE_KEY = 'drainwatch_reports_v2';
+const STORAGE_KEY = 'drainwatch_reports_v3';
 
 export function getStoredReports() {
   try {
@@ -16,6 +16,14 @@ export function getStoredReports() {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
+      // Ensure all current seed reports exist in the loaded array
+      const existingIds = new Set(parsed.map((r) => r.id));
+      const missingSeeds = SEED_REPORTS.filter((s) => !existingIds.has(s.id));
+      if (missingSeeds.length > 0) {
+        const merged = [...parsed, ...missingSeeds];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      }
       return parsed;
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_REPORTS));
