@@ -11,11 +11,14 @@ import {
   CloudRain,
   ChevronDown,
   ChevronUp,
+  Inbox,
 } from 'lucide-react';
 
 export function Navbar({
   onOpenReport,
   onOpenAbout,
+  onOpenInbox,
+  unreadCount = 0,
   onResetDemo,
   onAddDemoPriority,
   activeScenario = 'live',
@@ -71,6 +74,21 @@ export function Navbar({
               )}
             </button>
 
+            {/* In-App Readiness Inbox Button */}
+            <button
+              onClick={onOpenInbox}
+              className="relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-navy-800/80 hover:bg-navy-700/80 rounded-xl border border-slate-700/80 transition"
+              title="Open Community Readiness Inbox"
+            >
+              <Inbox className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Inbox</span>
+              {unreadCount > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
             {/* About & Limits */}
             <button
               onClick={onOpenAbout}
@@ -101,6 +119,19 @@ export function Navbar({
               title="Demo scenarios"
             >
               <Sliders className="w-4 h-4 text-amber-400" />
+            </button>
+
+            <button
+              onClick={onOpenInbox}
+              className="relative p-2 rounded-lg border text-xs bg-navy-800 text-slate-300 border-slate-700 hover:text-white"
+              title="Open Readiness Inbox"
+            >
+              <Inbox className="w-4 h-4 text-indigo-400" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-black bg-rose-500 text-white flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             <button
@@ -208,10 +239,28 @@ export function Navbar({
         <div className="md:hidden border-t border-navy-800 bg-navy-900/98 px-4 py-3 space-y-2 backdrop-blur">
           <button
             onClick={() => {
+              onOpenInbox();
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center justify-between p-2.5 text-xs font-semibold text-slate-200 bg-navy-800 hover:bg-navy-700 rounded-xl transition"
+          >
+            <div className="flex items-center gap-2">
+              <Inbox className="w-4 h-4 text-indigo-400" />
+              <span>Readiness Inbox</span>
+            </div>
+            {unreadCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">
+                {unreadCount} unread
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => {
               onOpenAbout();
               setMobileMenuOpen(false);
             }}
-            className="w-full flex items-center gap-2 p-2.5 text-xs font-medium text-slate-200 bg-navy-800 rounded-xl"
+            className="w-full flex items-center gap-2 p-2.5 text-xs font-medium text-slate-200 bg-navy-800 hover:bg-navy-700 rounded-xl transition"
           >
             <Info className="w-4 h-4 text-sky-400" />
             <span>About &amp; Safety Boundaries</span>

@@ -8,6 +8,7 @@ import { PriorityList } from './components/PriorityList';
 import { IssueDetailModal } from './components/IssueDetailModal';
 import { ReportModal } from './components/ReportModal';
 import { AboutSection } from './components/AboutSection';
+import { ReadinessInboxModal } from './components/ReadinessInboxModal';
 import { Footer } from './components/Footer';
 
 import {
@@ -23,6 +24,7 @@ import {
   injectDemoPriorityReport,
 } from './utils/storage';
 import { calculatePriorityScore } from './utils/priorityEngine';
+import { generateInboxMessages } from './utils/inboxEngine';
 import { calculateDistanceKm } from './utils/formatters';
 import { Sparkles, CheckCircle, AlertTriangle, ShieldCheck, RefreshCw, Radio, Layers, Plus } from 'lucide-react';
 
@@ -42,6 +44,15 @@ export default function App() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportModalMode, setReportModalMode] = useState('issue'); // 'issue' | 'asset'
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [readInboxIds, setReadInboxIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('drainwatch_read_inbox_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [pickedLocation, setPickedLocation] = useState(null);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list'
@@ -217,7 +228,11 @@ export default function App() {
     const resetList = resetDemoData();
     setReports(resetList);
     setSelectedReport(null);
-    showToast('Demo data restored to 5 starter Batu Pahat reports.');
+    setReadInboxIds([]);
+    try {
+      localStorage.removeItem('drainwatch_read_inbox_ids');
+    } catch (e) {}
+    showToast('Demo data restored to starter Batu Pahat reports.');
   };
 
   // Demo: Inject critical priority report
@@ -273,6 +288,35 @@ export default function App() {
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }, [reports, selectedLocation, weather.status]);
 
+  // Compute In-App Explainable Readiness Inbox Messages (Requirement 3, 4, 8)
+  const inboxMessages = useMemo(() => {
+    return generateInboxMessages(reports, weather, selectedLocation, readInboxIds);
+  }, [reports, weather, selectedLocation, readInboxIds]);
+
+  const unreadInboxCount = useMemo(() => {
+    return inboxMessages.filter((m) => !m.isRead).length;
+  }, [inboxMessages]);
+
+  const handleMarkInboxRead = useCallback((msgId) => {
+    setReadInboxIds((prev) => {
+      if (prev.includes(msgId)) return prev;
+      const next = [...prev, msgId];
+      try {
+        localStorage.setItem('drainwatch_read_inbox_ids', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  const handleMarkAllInboxRead = useCallback(() => {
+    const allIds = inboxMessages.map((m) => m.id);
+    setReadInboxIds(allIds);
+    try {
+      localStorage.setItem('drainwatch_read_inbox_ids', JSON.stringify(allIds));
+    } catch (e) {}
+    showToast('All inbox messages marked as read.');
+  }, [inboxMessages, showToast]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans selection:bg-ocean/20 selection:text-ocean">
       {/* Toast Notification */}
@@ -301,6 +345,8 @@ export default function App() {
       <Navbar
         onOpenReport={handleOpenReportIssue}
         onOpenAbout={() => setIsAboutModalOpen(true)}
+        onOpenInbox={() => setIsInboxOpen(true)}
+        unreadCount={unreadInboxCount}
         onResetDemo={handleResetDemoData}
         onAddDemoPriority={handleAddDemoPriority}
         activeScenario={activeScenario}
@@ -491,6 +537,20 @@ export default function App() {
       <AboutSection
         isOpen={isAboutModalOpen}
         onClose={() => setIsAboutModalOpen(false)}
+      />
+
+      {/* In-App Readiness Inbox Modal */}
+      <ReadinessInboxModal
+        isOpen={isInboxOpen}
+        onClose={() => setIsInboxOpen(false)}
+        messages={inboxMessages}
+        onSelectReport={(rep) => {
+          setSelectedReport(rep);
+        }}
+        onMarkAllAsRead={handleMarkAllInboxRead}
+        onMarkAsRead={handleMarkInboxRead}
+        weather={weather}
+        selectedLocation={selectedLocation}
       />
     </div>
   );

@@ -10,6 +10,13 @@ import {
 import { SEED_REPORTS } from './src/data/seedReports.js';
 import { getRainStatus } from './src/api/weather.js';
 import { calculateDistanceKm } from './src/utils/formatters.js';
+import {
+  generateInboxMessages,
+  INBOX_FORMULA_TEXT,
+  INBOX_DISCLAIMER_TEXT,
+  SAFETY_DIRECTIVE_TEXT,
+  ADVISORY_LABEL_TEXT,
+} from './src/utils/inboxEngine.js';
 
 console.log('--- RUNNING DRAINWATCH STORMWATER & LITTER TRUST SUITE ---');
 
@@ -200,4 +207,76 @@ if (!mobilizationBreakdown.detail.includes('Heavy rain can mobilize debris into 
 console.log(` - Factor detail: "${mobilizationBreakdown.detail}"`);
 console.log('✓ Heavy Rain debris mobilization elevation verified successfully.');
 
-console.log('\n✓ ALL 7/7 STORMWATER & LITTER TRUST TESTS PASSED WITH 100% SUCCESS!\n');
+// 8. Verify In-App Explainable Readiness Inbox Engine
+console.log('\n[Test 8] Verifying In-App Explainable Readiness Inbox Engine:');
+const demoLocation = { latitude: 1.8548, longitude: 102.9325, name: 'Batu Pahat' };
+const heavyWeather = { status: 'heavy', rain24h: 34.2, precipitation24h: 34.2 };
+
+const inboxMsgs = generateInboxMessages(SEED_REPORTS, heavyWeather, demoLocation, []);
+console.log(` - Total inbox messages generated: ${inboxMsgs.length}`);
+
+// Requirement 4: At least 2 seeded demo messages under Heavy Rain
+const readinessNotices = inboxMsgs.filter((m) => m.type === 'readiness_notice');
+const freshwaterUpdates = inboxMsgs.filter((m) => m.type === 'freshwater_update');
+const resolutionUpdates = inboxMsgs.filter((m) => m.type === 'resolution_update');
+
+console.log(` - Community Readiness Messages: ${readinessNotices.length}`);
+console.log(` - Freshwater Protection Updates: ${freshwaterUpdates.length}`);
+console.log(` - Resolution Updates: ${resolutionUpdates.length}`);
+
+if (readinessNotices.length < 1) {
+  throw new Error('Inbox must include at least 1 Community Readiness Message under Heavy Rain');
+}
+if (freshwaterUpdates.length < 1) {
+  throw new Error('Inbox must include at least 1 Freshwater Protection Update under Heavy Rain');
+}
+
+// Check first Readiness Notice
+const topReadiness = readinessNotices[0];
+console.log(` - Top Readiness Notice: "${topReadiness.title}" (Relevance=${topReadiness.relevanceScore})`);
+if (!topReadiness.signals || topReadiness.signals.length === 0) {
+  throw new Error('Top readiness message must include signals array for "Why this message?"');
+}
+
+// Check first Freshwater Update
+const topFreshwater = freshwaterUpdates[0];
+console.log(` - Top Freshwater Update: "${topFreshwater.title}" (Relevance=${topFreshwater.relevanceScore})`);
+if (!topFreshwater.signals || topFreshwater.signals.length === 0) {
+  throw new Error('Top freshwater message must include signals array for "Why this message?"');
+}
+
+// Requirement 9: Resolved reports show resolution update and no active readiness notice
+const resolvedMsg = inboxMsgs.find((m) => m.reportId === 'dw-bp-005');
+if (!resolvedMsg) {
+  throw new Error('Expected resolved seed report dw-bp-005 to generate an inbox message');
+}
+if (resolvedMsg.type !== 'resolution_update') {
+  throw new Error(`Resolved report must be type 'resolution_update', got '${resolvedMsg.type}'`);
+}
+if (!resolvedMsg.isResolvedNotice) {
+  throw new Error('Resolved message must have isResolvedNotice=true');
+}
+console.log(` - Resolved Report dw-bp-005: correctly categorized as "${resolvedMsg.typeName}"`);
+
+// Requirement 6 & 7: Check safe suggested actions and text
+inboxMsgs.forEach((msg) => {
+  const hasSafety = msg.suggestedActions.some((a) => a.includes('Do not enter drains, floodwater, moving water, or unsafe roads'));
+  if (!hasSafety) {
+    throw new Error(`Message ${msg.id} missing required safety action directive`);
+  }
+});
+console.log(' - Safety directive verified in suggested actions for all messages');
+
+// Formula text verification
+if (!INBOX_FORMULA_TEXT.includes('Inbox relevance = weather trigger + nearby unresolved issue + priority')) {
+  throw new Error('INBOX_FORMULA_TEXT does not match required formula');
+}
+if (!INBOX_DISCLAIMER_TEXT.includes('Readiness Assistant uses transparent prototype rules')) {
+  throw new Error('INBOX_DISCLAIMER_TEXT does not match required disclaimer');
+}
+if (ADVISORY_LABEL_TEXT !== 'Advisory prototype — not an official flood or water-quality warning') {
+  throw new Error('ADVISORY_LABEL_TEXT does not match exact required advisory label');
+}
+console.log('✓ In-App Explainable Readiness Inbox Engine verified successfully.');
+
+console.log('\n✓ ALL 8/8 STORMWATER, LITTER & INBOX TRUST TESTS PASSED WITH 100% SUCCESS!\n');

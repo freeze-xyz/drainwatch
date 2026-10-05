@@ -140,7 +140,28 @@ All seed reports are clearly marked: *"Demo workspace — simulated citizen repo
 
 ---
 
-## 7. Technologies Used
+## 7. In-App Explainable Readiness Inbox
+
+The in-app **Readiness Inbox** demonstrates transparent, personalized community readiness triage for the selected demo location without requiring browser push notifications, SMS, email, login, real GPS tracking, or external AI APIs.
+
+### Deterministic Relevance Formula:
+$$\text{Inbox relevance} = \text{weather trigger} + \text{nearby unresolved issue} + \text{priority} + \text{evidence freshness} + \text{community confirmation} - \text{resolved status}$$
+
+### Key Features & Signal Transparency:
+- **Unread Counter Badge**: Directly accessible from top navigation with real-time unread count.
+- **Weather & Scenario Aware**: Under Heavy Rain (>20 mm/24h), automatically showcases:
+  - A **Community Readiness Message** for severe unresolved nearby drainage issues.
+  - A **Freshwater Protection Update** for unresolved litter, dumping, or runoff concerns with debris mobilization risks.
+- **Expandable "Why this message?" Explanations**: Lists the exact evaluated signals (weather forecast, proximity, priority score, evidence freshness, community confirmation, and waterway pathway).
+- **Resolution Handling**: Resolved reports no longer trigger active hazard notices; instead they generate an informational resolution update confirming restored drainage capacity.
+- **Safe Action Recommendations**: Every message includes safe community guidelines and the mandatory safety directive:
+  > *“Check official weather guidance. Do not enter drains, floodwater, moving water, or unsafe roads.”*
+- **Advisory Prototype Boundary**:
+  > *“Readiness Assistant uses transparent prototype rules based on forecast context and community evidence. It does not predict flooding, verify water quality, or issue official emergency alerts.”*
+
+---
+
+## 8. Technologies Used
 
 - **Frontend Framework**: React 18 + Vite (JavaScript).
 - **Styling**: Tailwind CSS (custom environmental resilience palette: Navy `#001f54`, Ocean Teal `#1282a2`, Sky Blue `#0284c7`, Amber `#f59e0b`, Red `#ef4444`, Green `#10b981`).
@@ -151,7 +172,7 @@ All seed reports are clearly marked: *"Demo workspace — simulated citizen repo
 
 ---
 
-## 8. Data Sources & Attribution
+## 9. Data Sources & Attribution
 
 - **Weather Forecasts**: Weather data by [Open-Meteo.com](https://open-meteo.com) under CC BY 4.0.
 - **Cartography & Map Tiles**: Map data &copy; [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) under ODbL.
@@ -159,7 +180,7 @@ All seed reports are clearly marked: *"Demo workspace — simulated citizen repo
 
 ---
 
-## 9. Local Setup & Deployment
+## 10. Local Setup & Deployment
 
 ### Prerequisites
 - Node.js v18+ (tested on Node v20.18.0)
@@ -190,14 +211,16 @@ npm run preview
 
 ---
 
-## 10. Verification & Automated Testing
+## 11. Verification & Automated Testing
 
 A dedicated test suite is included in `test_engine.js`:
 ```bash
 node test_engine.js
 ```
 Verifies:
-- All 5 starter seed records meet schema constraints.
+- All 9 starter seed records meet schema constraints.
 - Precipitation status thresholds (Low <5mm, Moderate 5-20mm, Heavy >20mm).
 - Mathematical correctness of the Priority Score formula across various conditions.
-- Explainability string generation and safety wording enforcement.
+- 6 integrated stormwater & litter categories with environmental tags.
+- Debris mobilization elevation under Heavy Rain.
+- In-App Explainable Readiness Inbox Engine with deterministic relevance triage.
